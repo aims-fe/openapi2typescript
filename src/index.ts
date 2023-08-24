@@ -3,7 +3,7 @@
 import http from 'http';
 import https from 'https';
 import fetch from 'node-fetch';
-import type { OperationObject } from 'openapi3-ts';
+import type { OperationObject, TagObject } from 'openapi3-ts';
 import converter from 'swagger2openapi';
 import Log from './log';
 import { mockGenerator } from './mockGenerator';
@@ -49,7 +49,7 @@ export type GenerateServiceProps = {
 
   hook?: {
     /** 自定义函数名称 */
-    customFunctionName?: (data: OperationObject) => string;
+    customFunctionName?: (data: OperationObject, tags: TagObject[]) => string;
     /** 自定义类型名称 */
     customTypeName?: (data: OperationObject) => string;
     /** 自定义类名 */
@@ -85,7 +85,7 @@ const converterSwaggerToOpenApi = (swagger: any) => {
     return swagger;
   }
   return new Promise((resolve, reject) => {
-    converter.convertObj(swagger, {}, (err, options) => {
+    converter.convertObj(swagger, { patch: true, warnOnly: true }, (err, options) => {
       Log(['💺 将 Swagger 转化为 openAPI']);
       if (err) {
         reject(err);
