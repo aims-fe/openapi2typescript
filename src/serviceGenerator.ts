@@ -284,13 +284,29 @@ class ServiceGenerator {
         //       p.replace('/', '').split('/')[1],
         //     ];
 
-        const tags = operationObject['x-swagger-router-controller']
-          ? [operationObject['x-swagger-router-controller']]
-          : operationObject.tags || [operationObject.operationId] || [
-            p.replace('/', '').split('/')[1],
-          ];
+        // const tags = operationObject['x-swagger-router-controller']
+        //   ? [operationObject['x-swagger-router-controller']]
+        //   : operationObject.tags || [operationObject.operationId] || [
+        //     p.replace('/', '').split('/')[1],
+        //   ];
 
-        tags.forEach((tagString) => {
+        const tagNames = operationObject.tags;
+        const tags = tagNames.map(tName => this.openAPIData.tags.find(t => t.name === tName));
+        const tagDescs = tags.map(t => t.description.split(' ').join(''));
+
+        // tags.forEach((tagString) => {
+        //   const tag = resolveTypeName(tagString);
+
+        //   if (!this.apiData[tag]) {
+        //     this.apiData[tag] = [];
+        //   }
+        //   this.apiData[tag].push({
+        //     path: `${basePath}${p}`,
+        //     method,
+        //     ...operationObject,
+        //   });
+        // });
+        tagDescs.forEach((tagString) => {
           const tag = resolveTypeName(tagString);
 
           if (!this.apiData[tag]) {
@@ -371,7 +387,7 @@ class ServiceGenerator {
     // 获取路径相同部分
     const pathBasePrefix = this.getBasePrefix(Object.keys(this.openAPIData.paths));
     return this.config.hook && this.config.hook.customFunctionName
-      ? this.config.hook.customFunctionName(data)
+      ? this.config.hook.customFunctionName(data, this.openAPIData.tags)
       : data.operationId
         ? this.resolveFunctionName(stripDot(data.operationId), data.method)
         : data.method + this.genDefaultFunctionName(data.path, pathBasePrefix);
@@ -534,15 +550,18 @@ class ServiceGenerator {
         if (this.config.hook && this.config.hook.customClassName) {
           className = this.config.hook.customClassName(tag);
         }
+        const classNameCamelCase = className.slice(0, 1).toLowerCase().concat(className.slice(1));
         if (genParams.length) {
           this.classNameList.push({
-            fileName: className,
+            // fileName: className,
+            fileName: classNameCamelCase,
             controllerName: className
           });
         }
         return {
           genType: 'ts',
-          className,
+          // className,
+          className: classNameCamelCase,
           instanceName: `${fileName[0].toLowerCase()}${fileName.substr(1)}`,
           list: genParams,
         };
@@ -910,7 +929,7 @@ class ServiceGenerator {
 
     if (schemaObject.properties) {
       const extProps = this.getProps(schemaObject)
-      return { props:[...props, extProps] };
+      return { props: [...props, extProps] };
     }
 
     return { props };
